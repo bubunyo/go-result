@@ -1,0 +1,12 @@
+# go-result[Experimental]
+
+This is an attempt to implement the rust `Result<T, Error>` Type in go.
+This is purely experimental. Do not use it in production.
+
+```
+
+var result := doSomthing().
+
+```
+
+

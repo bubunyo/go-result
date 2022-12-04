@@ -40,11 +40,10 @@ You can also chain results like this
 song := ReadFile("./rick-roll-1").
   Then(func(p1 []string) result.Resolver[[]string] {
     return result.Ok(append(p1, ReadFile("./rick-roll-2").Result()...))
-	}).
-	Result()
+  }).Result()
 
 
-  /* 
+/* 
 Output:
 
 Never gonna give you up

@@ -2,6 +2,7 @@ package result
 
 import (
 	"fmt"
+	// "runtime"
 )
 
 type Resolver[T any] interface {
@@ -10,8 +11,10 @@ type Resolver[T any] interface {
 	Err() error
 	Expect(string) T
 	Result() T
-	Then(func(T) (T, error)) Resolver[T]
+	Then(func(T) Resolver[T]) Resolver[T]
 	Error() string
+	And(Resolver[T]) Resolver[T]
+	Or(Resolver[T]) Resolver[T]
 }
 
 type Result[T any] struct {
@@ -27,16 +30,18 @@ func Error[T any](err error) Result[T] {
 	return Result[T]{err: err}
 }
 
-func (r Result[T]) And(res Resolver[T]) Resolver[T] {
+func (r Result[T]) And(r2 Resolver[T]) Resolver[T] {
 	if !r.IsOk() {
 		return Error[T](r.err)
 	}
-	return res
+	return r2
 }
 
-// will return the first result that is ok.
-func Or[D any](res ...Resolver[D]) Resolver[D] {
-	panic("not implemented") // TODO: Implement
+func (r Result[T]) Or(r2 Resolver[T]) Resolver[T] {
+	if r.IsOk() {
+		return r
+	}
+	return r2
 }
 
 func (r Result[T]) Ok() T {
@@ -56,8 +61,9 @@ func (r Result[D]) Error() string {
 }
 
 func (r Result[D]) Expect(msg string) D {
+	// runtime.Caller(1)
 	if r.err != nil {
-		panic(fmt.Sprintf("result: %s, error:%s", msg, r.err.Error()))
+		panic(fmt.Sprintf("%s, %s", r.err.Error(), msg))
 	}
 	return r.t
 }
@@ -69,13 +75,9 @@ func (r Result[T]) Result() T {
 	return r.t
 }
 
-func (r Result[T]) Then(f func(T) (T, error)) Resolver[T] {
+func (r Result[T]) Then(f func(T) Resolver[T]) Resolver[T] {
 	if !r.IsOk() {
-		return r
+		return Error[T](r.Err())
 	}
-	t, err := f(r.t)
-	if err != nil {
-		return Error[T](err)
-	}
-	return Ok(t)
+	return f(r.t)
 }
